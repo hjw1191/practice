@@ -27,6 +27,7 @@
             var cardGroup = document.getElementById('product-cards');
         
             productArray.forEach(product => {
+                console.log(product.num); // 각 제품의 num 값을 확인
                 var card = document.createElement('div');
                 card.className = 'col-4 mb-4';  // 카드가 3열로 배치되도록 설정
                 card.innerHTML = `
@@ -36,6 +37,7 @@
                             <h5 class="card-title" id='cardtitle'>${product.title}</h5>
                             <p class="card-text">상품명: ${product.title}</p>
                             <p class="card-text">가격: ${product.price}원</p>
+                            ${product.num > 1 ? `<p class="num">갯수 : ${product.num}개</p>` : ''}
                             <button class="btn btn-danger buy">구매하기</button>
                         </div>
                     </div>
@@ -97,22 +99,35 @@
         });
 
 
-    $(document).on('click', '.buy', function() {
-    var productTitle = $(this).siblings('h5').text(); // 
-    var cart = localStorage.getItem('cart'); // 기존의 cart 데이터를 로드
-    // cart가 존재하면 JSON 파싱, 존재하지 않으면 빈 배열로 초기화
+        $(document).on('click', '.buy', function() {
+    var productTitle = $(this).siblings('h5').text();
+    var cart = localStorage.getItem('cart');
     cart = cart ? JSON.parse(cart) : [];
-    // 새로운 제품 제목을 장바구니 배열에 추가
-    cart.push(productTitle);
-    // 업데이트된 배열을 다시 JSON 문자열로 변환하여 로컬 스토리지에 저장
-    localStorage.setItem('cart', JSON.stringify(cart));
-    console.log(cart);
-    });
 
+    // 장바구니에서 현재 제품이 이미 있는지 확인
+    var existingProduct = cart.find(item => item.title === productTitle);
+
+    if (existingProduct) {
+        // 이미 존재하면 수량 증가
+        existingProduct.num += 1;
+    } else {
+        // 존재하지 않으면 새로 추가
+        cart.push({ title: productTitle, num: 1 });
+    }
+
+    // 업데이트된 장바구니를 다시 저장
+    localStorage.setItem('cart', JSON.stringify(cart));
+});
     $('#shoppingcart').click(function(){
      var cart = localStorage.getItem('cart');
+     cart = cart ? JSON.parse(cart) : []; // 가져올때도 json 으로 파싱
      $('#product-cards').html('');
-     var cartProducts = allData.filter(product => cart.includes(product.title));
+     var cartProducts = allData
+    .filter(product => cart.some(cartItem => cartItem.title === product.title))
+    .map(product => {
+        var cartItem = cart.find(cartItem => cartItem.title === product.title);
+        return { ...product, num: cartItem.num }; 
+    });
      상품목록(cartProducts);
     })
     </script> 
